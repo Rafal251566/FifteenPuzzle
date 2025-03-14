@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using FifteenApp;
@@ -15,8 +16,8 @@ namespace FifteenView
         {
             InitializeComponent();
 
-            string path = @"D:\Pobrane\puzzlegen\4x4_01_00001.txt"; //na ten moment statycznie do zmiany ofc
-                puzzleLoader = new PuzzleLoader(path);
+            string filepath = Path.Combine(Directory.GetCurrentDirectory(), "4x4_07_00201.txt");
+            puzzleLoader = new PuzzleLoader(filepath);
                 gridSize = puzzleLoader.x;
                 GenerateGrid(gridSize);
         }

@@ -8,6 +8,7 @@ namespace FifteenApp
 {
     public class PuzzleLoader
     {
+
         public int[,] PuzzleArray { get; private set; }
         public int x { get; private set; }
         public int y { get; private set; }
