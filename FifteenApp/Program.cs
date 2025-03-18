@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -8,7 +9,6 @@ internal class Program
     private static void Main(string[] args)
     {
         string filepath = Path.Combine(Directory.GetCurrentDirectory(), "4x4_07_00201.txt");
-
 
         if (!File.Exists(filepath))
         {
@@ -24,35 +24,51 @@ internal class Program
 
         int[,] puzzleArray = new int[x, y];
 
-        int emptyX = 1, emptyY = 1;
-
         for (int i = 0; i < x; i++)
         {
             string[] values = lines[i + 1].Split(' ');
             for (int j = 0; j < y; j++)
             {
                 puzzleArray[i, j] = Convert.ToInt32(values[j]);
-                if (puzzleArray[i, j] == 0)
-                {
-                    emptyX = i;
-                    emptyY = j;
-                }
             }
         }
 
-        PrintPuzzle(puzzleArray, x, y);
-
         List<string> solution = SolveBFS(puzzleArray, x, y);
+
+        PrintPuzzle(puzzleArray,x,y);
 
         if (solution != null)
         {
             Console.WriteLine("Znaleziona najszybsza droga to: " + string.Join(" -> ", solution));
+
+            string solutionFilePath = Path.Combine(Directory.GetCurrentDirectory(), "solution.txt");
+            File.WriteAllLines(solutionFilePath, solution);
+
+            Console.Write("Czy chcesz zobaczyć wizualizację? (T/N): ");
+            string response = Console.ReadLine();
+
+            if (response?.ToUpper() == "T")
+            {
+                string relativePath = Path.Combine("..", "..","..",".." ,"FifteenView", "bin", "Debug", "net9.0-windows", "FifteenView.exe");
+                string fullPath = Path.GetFullPath(relativePath);
+                string moves = string.Join(",", solution);
+
+                if (File.Exists(fullPath))
+                {
+                    Process.Start(fullPath, moves);
+                }
+                else
+                {
+                    Console.WriteLine("Nie znaleziono pliku View.exe! Sprawdź ścieżkę.");
+                }
+            }
         }
         else
         {
             Console.WriteLine("Brak rozwiązania.");
         }
     }
+
 
     private static List<string> SolveBFS(int[,] puzzle, int x, int y)
     {
@@ -82,7 +98,7 @@ internal class Program
             int[,] currentPuzzle = takenElement.Item1;
             int curX = takenElement.Item2;
             int curY = takenElement.Item3;
-            List<string> path = takenElement.Item4;   //wydaje mi sie ze da sie to jakos lepiej/prosciej zrobic ale nie wiem na ten moment jak :D
+            List<string> path = takenElement.Item4;   //wydaje mi sie ze da sie to jakos lepiej/prosciej zrobic ale nie wiem na ten moment jak 😃
 
             if (IsSolved(currentPuzzle, x, y))
                 return path;
@@ -97,7 +113,7 @@ internal class Program
                 int newY = curY + cols[i];
                 string move = moves[i];
 
-                if (newX >= 0 && newX < x && newY >= 0 && newY < y) 
+                if (newX >= 0 && newX < x && newY >= 0 && newY < y)
                 {
                     int[,] newPuzzle = (int[,])currentPuzzle.Clone();
                     (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
@@ -106,7 +122,7 @@ internal class Program
                     if (!visited.Contains(stateStr))
                     {
                         visited.Add(stateStr);
-                       // List<string> newPath = [.. path, move]; metoda zaproponowana przez VS
+                        // List<string> newPath = [.. path, move]; metoda zaproponowana przez VS
                         List<string> newPath = new List<string>(path);
                         newPath.Add(move);
                         queue.Enqueue((newPuzzle, newX, newY, newPath));

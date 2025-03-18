@@ -11,6 +11,7 @@ namespace FifteenView
         private int gridSize;
         private Button[,] buttons;
         private PuzzleLoader puzzleLoader;
+        private string[] solutionMoves;
 
         public MainWindow()
         {
@@ -18,8 +19,22 @@ namespace FifteenView
 
             string filepath = Path.Combine(Directory.GetCurrentDirectory(), "4x4_07_00201.txt");
             puzzleLoader = new PuzzleLoader(filepath);
-                gridSize = puzzleLoader.x;
-                GenerateGrid(gridSize);
+            gridSize = puzzleLoader.x;
+            GenerateGrid(gridSize);
+            string solutionFilePath = Path.Combine(Directory.GetCurrentDirectory(), "solution.txt");
+
+            // Poprawiona inicjalizacja
+            solutionMoves = File.ReadAllLines(solutionFilePath);
+            SolveAnimation();
+        }
+
+        private async void SolveAnimation()
+        {
+            foreach (string move in solutionMoves)
+            {
+                await Task.Delay(500);
+                MakeMove(move);
+            }
         }
 
         private void GenerateGrid(int size)
@@ -55,7 +70,6 @@ namespace FifteenView
                         button.Visibility = Visibility.Hidden;
                     }
 
-
                     Grid.SetRow(button, i);
                     Grid.SetColumn(button, j);
                     puzzleGrid.Children.Add(button);
@@ -66,6 +80,84 @@ namespace FifteenView
             this.Content = puzzleGrid;
         }
 
-        //TODO logika przycisku
+        private void MakeMove(string move)
+        {
+            int emptyRow = -1, emptyCol = -1;
+            for (int i = 0; i < gridSize; i++)
+            {
+                for (int j = 0; j < gridSize; j++)
+                {
+                    if (puzzleLoader.PuzzleArray[i, j] == 0)
+                    {
+                        emptyRow = i;
+                        emptyCol = j;
+                        break;
+                    }
+                }
+                if (emptyRow != -1) break;
+            }
+
+            switch (move)
+            {
+                case "U":
+                    if (emptyRow > 0)
+                    {
+                        Swap(emptyRow, emptyCol, emptyRow - 1, emptyCol);
+                    }
+                    break;
+
+                case "D": // Dół
+                    if (emptyRow < gridSize - 1)
+                    {
+                        Swap(emptyRow, emptyCol, emptyRow + 1, emptyCol);
+                    }
+                    break;
+
+                case "L": // Lewo
+                    if (emptyCol > 0)
+                    {
+                        Swap(emptyRow, emptyCol, emptyRow, emptyCol - 1);
+                    }
+                    break;
+
+                case "R": // Prawo
+                    if (emptyCol < gridSize - 1)
+                    {
+                        Swap(emptyRow, emptyCol, emptyRow, emptyCol + 1);
+                    }
+                    break;
+            }
+
+            UpdateUI();
+        }
+
+        private void Swap(int row1, int col1, int row2, int col2)
+        {
+            int temp = puzzleLoader.PuzzleArray[row1, col1];
+            puzzleLoader.PuzzleArray[row1, col1] = puzzleLoader.PuzzleArray[row2, col2];
+            puzzleLoader.PuzzleArray[row2, col2] = temp;
+        }
+
+        private void UpdateUI()
+        {
+            for (int i = 0; i < gridSize; i++)
+            {
+                for (int j = 0; j < gridSize; j++)
+                {
+                    Button button = buttons[i, j];
+                    int value = puzzleLoader.PuzzleArray[i, j];
+
+                    if (value != 0)
+                    {
+                        button.Content = value.ToString();
+                        button.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        button.Visibility = Visibility.Hidden;
+                    }
+                }
+            }
+        }
     }
 }
