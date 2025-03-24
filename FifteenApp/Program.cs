@@ -50,7 +50,7 @@ internal class Program
 
             if (response?.ToUpper() == "T")
             {
-                string relativePath = Path.Combine("..",".." ,"FifteenView", "bin", "Debug", "net9.0-windows", "FifteenView.exe");
+                string relativePath = Path.Combine("..", "..","..",".." ,"FifteenView", "bin", "Debug", "net9.0-windows", "FifteenView.exe");
                 string fullPath = Path.GetFullPath(relativePath);
                 string moves = string.Join(",", solution);
 
