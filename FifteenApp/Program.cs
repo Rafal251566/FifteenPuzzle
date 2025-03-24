@@ -34,9 +34,23 @@ internal class Program
             }
         }
 
-        List<string> solution = SolveDFS(puzzleArray, x, y);
+        Console.Write("Wybier algorytm ktorym chcesz przeszukiwac rozwiazania: \n" +
+           "a) BFS\n" +
+           "b) DFS" +
+           "\n");
 
-        PrintPuzzle(puzzleArray,x,y);
+        List<string> solution = null;
+        string Response1 = Console.ReadLine();
+
+        if (Response1.ToUpper() == "a")
+        {
+            solution = SolveBFS(puzzleArray, x, y);
+        }else
+        {
+            solution = SolveDFS(puzzleArray, x, y);
+        }
+
+            PrintPuzzle(puzzleArray, x, y);
 
         if (solution != null)
         {
@@ -93,10 +107,8 @@ internal class Program
         Stack<(int[,], int, int, List<string>, int Depth)> stack = new();
         HashSet<string> visited = new();
 
-        int emptyX = 0, emptyY = 0;
-
-        emptyX = SearchForZero(puzzle, x, y)[0];
-        emptyY = SearchForZero(puzzle, x, y)[1];
+        int emptyX = SearchForZero(puzzle, x, y)[0];
+        int emptyY = SearchForZero(puzzle, x, y)[1];
 
         stack.Push((puzzle, emptyX, emptyY, new List<string>(), 0));
         visited.Add(GetState(puzzle));
@@ -115,7 +127,7 @@ internal class Program
                 Console.WriteLine("Glebokosc: " + Depth);
                 return path;
             }
-            if (Depth > 20) continue;
+            if (Depth >= 20) continue;
 
             int[] rows = { -1, 1, 0, 0 };
             int[] cols = { 0, 0, -1, 1 };
@@ -139,8 +151,7 @@ internal class Program
                         // List<string> newPath = [.. path, move]; metoda zaproponowana przez VS
                         List<string> newPath = new List<string>(path);
                         newPath.Add(move);
-                        Depth++;
-                        stack.Push((newPuzzle, newX, newY, newPath, Depth));
+                        stack.Push((newPuzzle, newX, newY, newPath, Depth + 1));
                     }
                 }
             }
