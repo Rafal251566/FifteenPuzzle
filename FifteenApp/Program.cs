@@ -41,26 +41,34 @@ internal class Program
                 "d) A* (Manhattan)\n");
 
         List<string> solution = null;
-        string Response1 = Console.ReadLine();
-
-        switch (Response1.ToUpper())
+        bool isSelected = false;
+        do
         {
-            case "A":
-                solution = SolveBFS(puzzleArray, x, y);
-                break;
-            case "B":
-                solution = SolveDFS(puzzleArray, x, y);
-                break;
-            case "C":
-                solution = SolveAStar(puzzleArray, x, y, "H");
-                break;
-            case "D":
-                solution = SolveAStar(puzzleArray, x, y, "M");
-                break;
-            default:
-                Console.WriteLine("Niepoprawny wybór. Wybierz A, B, C lub D.");
-                break;
-        }
+            string Response1 = Console.ReadLine();
+
+            switch (Response1.ToUpper())
+            {
+                case "A":
+                    solution = SolveBFS(puzzleArray, x, y);
+                    isSelected = true;
+                    break;
+                case "B":
+                    solution = SolveDFS(puzzleArray, x, y);
+                    isSelected = true;
+                    break;
+                case "C":
+                    solution = SolveAStar(puzzleArray, x, y, "H");
+                    isSelected = true;
+                    break;
+                case "D":
+                    solution = SolveAStar(puzzleArray, x, y, "M");
+                    isSelected = true;
+                    break;
+                default:
+                    Console.WriteLine("Niepoprawny wybór. Wybierz A, B, C lub D.");
+                    continue;
+            }
+        } while (!isSelected);
 
 
         PrintPuzzle(puzzleArray, x, y);
