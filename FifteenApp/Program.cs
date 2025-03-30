@@ -7,6 +7,25 @@ using System.Linq;
 
 internal class Program
 {
+
+    private static Dictionary<char, (int row, int col, string move)> moveDictionary = new Dictionary<char, (int, int, string)>
+    {
+        {'U', (-1, 0, "U")},
+        {'D', (1, 0, "D")},
+        {'L', (0, -1, "L")},
+        {'R', (0, 1, "R")}
+    };
+
+    private static Dictionary<char, char> swingMoves = new Dictionary<char, char>
+    {
+        {'U', 'D'},
+        {'D', 'U'},
+        {'L', 'R'},
+        {'R', 'L'},
+        {' ', ' '}
+    };
+
+
     private static void Main(string[] args)
     {
         string filepath = Path.Combine(Directory.GetCurrentDirectory(), "4x4_07_00201.txt");
@@ -49,11 +68,15 @@ internal class Program
             switch (Response1.ToUpper())
             {
                 case "A":
-                    solution = SolveBFS(puzzleArray, x, y);
+                    Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
+                    string order = Console.ReadLine().ToUpper();
+                    solution = SolveBFS(puzzleArray, x, y,order);
                     isSelected = true;
                     break;
                 case "B":
-                    solution = SolveDFS(puzzleArray, x, y);
+                    Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
+                    order = Console.ReadLine().ToUpper();
+                    solution = SolveDFS(puzzleArray, x, y,order);
                     isSelected = true;
                     break;
                 case "C":
@@ -123,26 +146,27 @@ internal class Program
         return zeroCoordinates;
     }
 
-    private static List<String> SolveDFS(int[,] puzzle, int x, int y )
+    private static List<String> SolveDFS(int[,] puzzle, int x, int y,string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        Stack<(int[,], int, int, List<string>, int Depth)> stack = new();
+        Stack<(int[,], int, int, List<string>, int, char)> stack = new();
         HashSet<string> visited = new();
 
         int emptyX = SearchForZero(puzzle, x, y)[0];
         int emptyY = SearchForZero(puzzle, x, y)[1];
 
-        stack.Push((puzzle, emptyX, emptyY, new List<string>(), 0));
+        stack.Push((puzzle, emptyX, emptyY, new List<string>(), 0, ' '));
         visited.Add(GetState(puzzle));
 
         while (stack.Count > 0)
         {
-            (int[,], int, int, List<string>, int Depth) takenElement = stack.Pop();
+            (int[,], int, int, List<string>, int, char) takenElement = stack.Pop();
             int[,] currentPuzzle = takenElement.Item1;
             int curX = takenElement.Item2;
             int curY = takenElement.Item3;
-            List<string> path = takenElement.Item4;   //wydaje mi sie ze da sie to jakos lepiej/prosciej zrobic ale nie wiem na ten moment jak 😃
+            List<string> path = takenElement.Item4;
             int Depth = takenElement.Item5;
+            char lastMove = takenElement.Item6;
 
             if (IsSolved(currentPuzzle, x, y))
             {
@@ -151,31 +175,30 @@ internal class Program
                 Console.WriteLine("Glebokosc: " + Depth);
                 return path;
             }
-            if (Depth >= 20) continue;
+            if (Depth >= 20) continue;;
 
-            int[] rows = { -1, 1, 0, 0 };
-            int[] cols = { 0, 0, -1, 1 };
-            string[] moves = { "U", "D", "L", "R" }; //to rozwiązanie nie pozwoli na wypisywanie użytkownikowi porządku przeszukiwania DO ZMIANY
-
-            for (int i = 0; i < 4; i++)
+            foreach (char next in order)
             {
-                int newX = curX + rows[i];
-                int newY = curY + cols[i];
-                string move = moves[i];
-
-                if (newX >= 0 && newX < x && newY >= 0 && newY < y)
+                if (moveDictionary.ContainsKey(next) && next != swingMoves[lastMove])
                 {
-                    int[,] newPuzzle = (int[,])currentPuzzle.Clone();
-                    (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
+                    (int row, int col, string move) moveInfo = moveDictionary[next];
+                    int newX = curX + moveInfo.row;
+                    int newY = curY + moveInfo.col;
+                    string move = moveInfo.move;
 
-                    string stateStr = GetState(newPuzzle);
-                    if (!visited.Contains(stateStr))
+                    if (newX >= 0 && newX < x && newY >= 0 && newY < y)
                     {
-                        visited.Add(stateStr);
-                        // List<string> newPath = [.. path, move]; metoda zaproponowana przez VS
-                        List<string> newPath = new List<string>(path);
-                        newPath.Add(move);
-                        stack.Push((newPuzzle, newX, newY, newPath, Depth + 1));
+                        int[,] newPuzzle = (int[,])currentPuzzle.Clone();
+                        (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
+
+                        string stateStr = GetState(newPuzzle);
+                        if (!visited.Contains(stateStr))
+                        {
+                            visited.Add(stateStr);
+                            List<string> newPath = new List<string>(path);
+                            newPath.Add(move);
+                            stack.Push((newPuzzle, newX, newY, newPath, Depth + 1, next));
+                        }
                     }
                 }
             }
@@ -186,30 +209,31 @@ internal class Program
     }
 
 
-    private static List<string> SolveBFS(int[,] puzzle, int x, int y)
+    private static List<string> SolveBFS(int[,] puzzle, int x, int y, string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        Queue<(int[,], int, int, List<string>)> queue = new();
+        Queue<(int[,], int, int, List<string>,char lastMove)> queue = new();
         HashSet<string> visited = new();
 
         int emptyX = 0, emptyY = 0;
 
-        emptyX =  SearchForZero(puzzle, x, y)[0];
+        emptyX = SearchForZero(puzzle, x, y)[0];
         emptyY = SearchForZero(puzzle, x, y)[1];
 
 
 
-        queue.Enqueue((puzzle, emptyX, emptyY, new List<string>()));
+        queue.Enqueue((puzzle, emptyX, emptyY, new List<string>(),' '));
 
         visited.Add(GetState(puzzle));
 
         while (queue.Count > 0)
         {
-            (int[,], int, int, List<string>) takenElement = queue.Dequeue();
+            (int[,], int, int, List<string>, char) takenElement = queue.Dequeue();
             int[,] currentPuzzle = takenElement.Item1;
             int curX = takenElement.Item2;
             int curY = takenElement.Item3;
-            List<string> path = takenElement.Item4;   //wydaje mi sie ze da sie to jakos lepiej/prosciej zrobic ale nie wiem na ten moment jak 😃
+            List<string> path = takenElement.Item4;
+            char lastMove = takenElement.Item5;
 
             if (IsSolved(currentPuzzle, x, y))
             {
@@ -217,35 +241,35 @@ internal class Program
                 Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
                 return path;
             }
-            int[] rows = { -1, 1, 0, 0 };
-            int[] cols = { 0, 0, -1, 1 };
-            string[] moves = { "U", "D", "L", "R" }; //to rozwiązanie nie pozwoli na wypisywanie użytkownikowi porządku przeszukiwania DO ZMIANY
 
-            for (int i = 0; i < 4; i++)
+            foreach (char next in order)
             {
-                int newX = curX + rows[i];
-                int newY = curY + cols[i];
-                string move = moves[i];
-
-                if (newX >= 0 && newX < x && newY >= 0 && newY < y)
+                if (moveDictionary.ContainsKey(next) && next != swingMoves[lastMove])
                 {
-                    int[,] newPuzzle = (int[,])currentPuzzle.Clone();
-                    (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
+                    (int row, int col, string move) moveInfo = moveDictionary[next];
+                    int newX = curX + moveInfo.row;
+                    int newY = curY + moveInfo.col;
+                    string move = moveInfo.move;
 
-                    string stateStr = GetState(newPuzzle);
-                    if (!visited.Contains(stateStr))
+                    if (newX >= 0 && newX < x && newY >= 0 && newY < y)
                     {
-                        visited.Add(stateStr);
-                        // List<string> newPath = [.. path, move]; metoda zaproponowana przez VS
-                        List<string> newPath = new List<string>(path);
-                        newPath.Add(move);
-                        queue.Enqueue((newPuzzle, newX, newY, newPath));
+                        int[,] newPuzzle = (int[,])currentPuzzle.Clone();
+                        (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
+
+                        string stateStr = GetState(newPuzzle);
+                        if (!visited.Contains(stateStr))
+                        {
+                            visited.Add(stateStr);
+                            List<string> newPath = new List<string>(path);
+                            newPath.Add(move);
+                            queue.Enqueue((newPuzzle, newX, newY, newPath,next));
+                        }
                     }
                 }
             }
         }
-        stopwatch.Stop();
-        return null;
+            stopwatch.Stop();
+            return null;      
     }
 
     private static List<string> SolveAStar(int[,] puzzle, int x, int y, string heuristicType)
