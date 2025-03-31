@@ -53,6 +53,7 @@ internal class Program
             }
         }
 
+
         Console.Write("Wybierz algorytm:\n" +
                 "a) BFS\n" +
                 "b) DFS\n" +
@@ -70,13 +71,14 @@ internal class Program
                 case "A":
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     string order = Console.ReadLine().ToUpper();
-                    solution = SolveBFS(puzzleArray, x, y,order);
+                    solution = SolveBFS(puzzleArray, x, y, order);
                     isSelected = true;
                     break;
                 case "B":
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     order = Console.ReadLine().ToUpper();
-                    solution = SolveDFS(puzzleArray, x, y,order);
+                    solution = SolveDFS(puzzleArray, x, y, order);
+                    Console.WriteLine($"Dlugość rozwiązania: {solution.Count}");
                     isSelected = true;
                     break;
                 case "C":
@@ -186,12 +188,12 @@ internal class Program
             }
 
             if (Depth >= 20) continue;
-            processedCount++;
 
             foreach (char next in order)
             {
                 if (moveDictionary.ContainsKey(next) && next != swingMoves[lastMove])
                 {
+                    processedCount++;
                     (int row, int col, string move) moveInfo = moveDictionary[next];
                     int newX = curX + moveInfo.row;
                     int newY = curY + moveInfo.col;
@@ -227,8 +229,12 @@ internal class Program
     private static List<string> SolveBFS(int[,] puzzle, int x, int y, string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        Queue<(int[,], int, int, List<string>,char)> queue = new();
+        Queue<(int[,], int, int, List<string>,char, int)> queue = new();
         HashSet<string> visited = new();
+
+        int visitedCount = 0;
+        int processedCount = 0;
+        int maxDepthReached = 0;
 
         int emptyX = 0, emptyY = 0;
 
@@ -237,23 +243,30 @@ internal class Program
 
 
 
-        queue.Enqueue((puzzle, emptyX, emptyY, new List<string>(),' '));
+        queue.Enqueue((puzzle, emptyX, emptyY, new List<string>(),' ', 0));
 
         visited.Add(GetState(puzzle));
 
         while (queue.Count > 0)
         {
-            (int[,], int, int, List<string>, char) takenElement = queue.Dequeue();
+            (int[,], int, int, List<string>, char, int) takenElement = queue.Dequeue();
             int[,] currentPuzzle = takenElement.Item1;
             int curX = takenElement.Item2;
             int curY = takenElement.Item3;
             List<string> path = takenElement.Item4;
             char lastMove = takenElement.Item5;
+            int Depth = takenElement.Item6;
+
+            maxDepthReached = Math.Max(maxDepthReached, Depth);
 
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
                 Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+                Console.WriteLine("Glebokosc: " + Depth);
+                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
                 return path;
             }
 
@@ -261,6 +274,8 @@ internal class Program
             {
                 if (moveDictionary.ContainsKey(next) && next != swingMoves[lastMove])
                 {
+                    processedCount++;
+
                     (int row, int col, string move) moveInfo = moveDictionary[next];
                     int newX = curX + moveInfo.row;
                     int newY = curY + moveInfo.col;
@@ -275,16 +290,21 @@ internal class Program
                         if (!visited.Contains(stateStr))
                         {
                             visited.Add(stateStr);
+                            visitedCount++;
                             List<string> newPath = new List<string>(path);
                             newPath.Add(move);
-                            queue.Enqueue((newPuzzle, newX, newY, newPath,next));
+                            queue.Enqueue((newPuzzle, newX, newY, newPath,next, Depth + 1));
                         }
                     }
                 }
             }
         }
             stopwatch.Stop();
-            return null;      
+        Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+        Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
+        return null;      
     }
 
     private static List<string> SolveAStar(int[,] puzzle, int x, int y, string heuristicType)
@@ -292,6 +312,10 @@ internal class Program
         Stopwatch stopwatch = Stopwatch.StartNew();
         PriorityQueue<(int[,], int, int, List<string>, int), int> priorityQueue = new();
         HashSet<string> visited = new();
+
+        int visitedCount = 0;
+        int processedCount = 0;
+        int maxDepthReached = 0;
 
         int emptyX = SearchForZero(puzzle, x, y)[0];
         int emptyY = SearchForZero(puzzle, x, y)[1];
@@ -309,10 +333,16 @@ internal class Program
             List<string> path = takenElement.Item4;
             int gCost = takenElement.g;
 
+            maxDepthReached = Math.Max(maxDepthReached, gCost);
+
             if (IsSolved(currentPuzzle, x, y)) 
             {
                 stopwatch.Stop();
-                Console.WriteLine($"SolveAStar ({heuristicType}) czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+                Console.WriteLine("Dlugość rozwiązania: " + gCost);
+                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
+                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                Console.WriteLine($"SolveAStar ({heuristicType}) czas wykonania: {Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3)} (ms)");
                 return path;
             }
             
@@ -329,6 +359,8 @@ internal class Program
 
                 if (newX >= 0 && newX < x && newY >= 0 && newY < y)
                 {
+                    processedCount++;
+
                     int[,] newPuzzle = (int[,])currentPuzzle.Clone();
                     (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
 
@@ -336,6 +368,7 @@ internal class Program
                     if (!visited.Contains(stateStr))
                     {
                         visited.Add(stateStr);
+                        visitedCount++;
                         List<string> newPath = new List<string>(path) { move };
                         int newG = gCost + 1;
                         int newH = heuristicType == "H" ? HammingDistance(newPuzzle, x, y) : ManhattanDistance(newPuzzle, x, y);
@@ -346,6 +379,10 @@ internal class Program
             }
         }
         stopwatch.Stop();
+        Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+        Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
         return null;
     }
 
