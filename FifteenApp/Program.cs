@@ -152,6 +152,10 @@ internal class Program
         Stack<(int[,], int, int, List<string>, int, char)> stack = new();
         HashSet<string> visited = new();
 
+        int visitedCount = 0;
+        int processedCount = 0;
+        int maxDepthReached = 0;
+
         int emptyX = SearchForZero(puzzle, x, y)[0];
         int emptyY = SearchForZero(puzzle, x, y)[1];
 
@@ -168,14 +172,21 @@ internal class Program
             int Depth = takenElement.Item5;
             char lastMove = takenElement.Item6;
 
+            maxDepthReached = Math.Max(maxDepthReached, Depth);
+
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
                 Console.WriteLine($"DFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
                 Console.WriteLine("Glebokosc: " + Depth);
+                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
                 return path;
             }
-            if (Depth >= 20) continue;;
+
+            if (Depth >= 20) continue;
+            processedCount++;
 
             foreach (char next in order)
             {
@@ -195,6 +206,7 @@ internal class Program
                         if (!visited.Contains(stateStr))
                         {
                             visited.Add(stateStr);
+                            visitedCount++;
                             List<string> newPath = new List<string>(path);
                             newPath.Add(move);
                             stack.Push((newPuzzle, newX, newY, newPath, Depth + 1, next));
@@ -204,6 +216,9 @@ internal class Program
             }
         }
         stopwatch.Stop();
+        Console.WriteLine($"DFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+        Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
+        Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
         return null;
 
     }
@@ -212,7 +227,7 @@ internal class Program
     private static List<string> SolveBFS(int[,] puzzle, int x, int y, string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
-        Queue<(int[,], int, int, List<string>,char lastMove)> queue = new();
+        Queue<(int[,], int, int, List<string>,char)> queue = new();
         HashSet<string> visited = new();
 
         int emptyX = 0, emptyY = 0;
@@ -337,7 +352,7 @@ internal class Program
 
     private static string GetState(int[,] puzzle)
     {
-        return string.Join(",", puzzle.Cast<int>()); //To zwraca stringa z kolejnoscia liczb
+        return string.Join(",", puzzle.Cast<int>());
     }
 
     private static bool IsSolved(int[,] puzzle, int x, int y)
