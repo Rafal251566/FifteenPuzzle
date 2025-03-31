@@ -30,6 +30,36 @@ internal class Program
 
     private static void Main(string[] args)
     {
+        if (args.Length < 3 || (args[0].ToLower() == "astr" && args.Length < 3))
+        {
+            Console.WriteLine("Użycie: program <ALGORYTM> [HEURYSTYKA] <KOLEJNOSC> <PLIK_WEJSCIOWY>");
+            return;
+        }
+
+        string algorithm = args[0].ToUpper();
+        string heuristic = "";
+        string order = "";
+        int index = 1;
+
+        if (algorithm == "ASTR")
+        {
+            heuristic = args[1].ToUpper();
+            index++;
+        }else
+        {
+            order = args[1].ToUpper();
+            index++;
+        }
+
+            string inputFile = args[2];
+
+        if (!File.Exists(inputFile))
+        {
+            Console.WriteLine("Plik wejściowy nie istnieje!");
+            return;
+        }
+
+
         string filepath = Path.Combine(Directory.GetCurrentDirectory(), "4x4_07_00201.txt");
 
         if (!File.Exists(filepath))
@@ -55,50 +85,28 @@ internal class Program
             }
         }
 
-
-        Console.Write("Wybierz algorytm:\n" +
-                "a) BFS\n" +
-                "b) DFS\n" +
-                "c) A* (Hamming)\n" +
-                "d) A* (Manhattan)\n");
-
         string[] solution = null;
         bool isSelected = false;
-        do
-        {
-            string Response1 = Console.ReadLine();
 
-            switch (Response1.ToUpper())
+            switch (algorithm.ToLower())
             {
-                case "A":
-                    Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
-                    string order = Console.ReadLine().ToUpper();
+                case "bfs":
                     solution = SolveBFS(puzzleArray, x, y, order);
                     SaveToFiles(solution, NazwaPliku, "bfs", order.ToLower());
                     isSelected = true;
                     break;
-                case "B":
-                    Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
-                    order = Console.ReadLine().ToUpper();
+                case "dfs":
                     solution = SolveDFS(puzzleArray, x, y, order);
                     SaveToFiles(solution,NazwaPliku,"dfs",order.ToLower());
                     isSelected = true;
                     break;
-                case "C":
-                    solution = SolveAStar(puzzleArray, x, y, "H");
-                    SaveToFiles(solution, NazwaPliku, "astr", "hamm");
+                case "astr":
+                    solution = SolveAStar(puzzleArray, x, y, heuristic);
+                    SaveToFiles(solution, NazwaPliku, "astr", heuristic.ToLower());
                     isSelected = true;
                     break;
-                case "D":
-                    solution = SolveAStar(puzzleArray, x, y, "M");
-                    SaveToFiles(solution, NazwaPliku, "astr", "manh");
-                    isSelected = true;
-                    break;
-                default:
-                    Console.WriteLine("Niepoprawny wybór. Wybierz A, B, C lub D.");
-                    continue;
+                break;
             }
-        } while (!isSelected);
 
 
         PrintPuzzle(puzzleArray, x, y);
@@ -111,7 +119,7 @@ internal class Program
             File.WriteAllText(solutionFilePath, solution[solution.Length-1]);
 
             Console.Write("Czy chcesz zobaczyć wizualizację? (T/N): ");
-            string response = Console.ReadLine();
+            string response = "N";
 
             if (response?.ToUpper() == "T")
             {
@@ -147,12 +155,19 @@ internal class Program
         {
             String nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_stats.txt");
 
-            File.WriteAllLines(nowaNazwaPliku, Results.Take(Results.Length - 1));
+            string nowaNazwaPliku2 = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_sol.txt");
 
-            nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_sol.txt");
+            if (newResults[0] == "-1")
+            {
 
-            File.WriteAllLines(nowaNazwaPliku, newResults);
+                File.WriteAllLines(nowaNazwaPliku, Results);
+                File.WriteAllText(nowaNazwaPliku2, newResults[0]);
 
+            } else {
+
+                File.WriteAllLines(nowaNazwaPliku, Results.Take(Results.Length - 1));
+                File.WriteAllLines(nowaNazwaPliku2, newResults);
+            }
             return true;
         }
         catch (IOException)
@@ -358,7 +373,7 @@ internal class Program
         int emptyX = SearchForZero(puzzle, x, y)[0];
         int emptyY = SearchForZero(puzzle, x, y)[1];
 
-        int h = heuristicType == "H" ? HammingDistance(puzzle, x, y) : ManhattanDistance(puzzle, x, y);
+        int h = heuristicType.ToLower() == "hamm" ? HammingDistance(puzzle, x, y) : ManhattanDistance(puzzle, x, y);
         priorityQueue.Enqueue((puzzle, emptyX, emptyY, new List<string>(), 0), h);
         visited.Add(GetState(puzzle));
 
@@ -410,7 +425,7 @@ internal class Program
                         visitedCount++;
                         List<string> newPath = new List<string>(path) { move };
                         int newG = gCost + 1;
-                        int newH = heuristicType == "H" ? HammingDistance(newPuzzle, x, y) : ManhattanDistance(newPuzzle, x, y);
+                        int newH = heuristicType.ToLower() == "hamm" ? HammingDistance(newPuzzle, x, y) : ManhattanDistance(newPuzzle, x, y);
                         int f = newG + newH;
                         priorityQueue.Enqueue((newPuzzle, newX, newY, newPath, newG), f);
                     }
