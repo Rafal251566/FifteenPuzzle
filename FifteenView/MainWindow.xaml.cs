@@ -11,7 +11,7 @@ namespace FifteenView
         private int gridSize;
         private Button[,] buttons;
         private PuzzleLoader puzzleLoader;
-        private string[] solutionMoves;
+        private string solutionMoves;
 
         public MainWindow()
         {
@@ -24,13 +24,13 @@ namespace FifteenView
             string solutionFilePath = Path.Combine(Directory.GetCurrentDirectory(), "solution.txt");
 
             // Poprawiona inicjalizacja
-            solutionMoves = File.ReadAllLines(solutionFilePath);
+            solutionMoves = File.ReadAllText(solutionFilePath);
             SolveAnimation();
         }
 
         private async void SolveAnimation()
         {
-            foreach (string move in solutionMoves)
+            foreach (char move in solutionMoves)
             {
                 await Task.Delay(500);
                 MakeMove(move);
@@ -80,7 +80,7 @@ namespace FifteenView
             this.Content = puzzleGrid;
         }
 
-        private void MakeMove(string move)
+        private void MakeMove(char move)
         {
             int emptyRow = -1, emptyCol = -1;
             for (int i = 0; i < gridSize; i++)
@@ -99,28 +99,28 @@ namespace FifteenView
 
             switch (move)
             {
-                case "U":
+                case 'U':
                     if (emptyRow > 0)
                     {
                         Swap(emptyRow, emptyCol, emptyRow - 1, emptyCol);
                     }
                     break;
 
-                case "D": // Dół
+                case 'D': // Dół
                     if (emptyRow < gridSize - 1)
                     {
                         Swap(emptyRow, emptyCol, emptyRow + 1, emptyCol);
                     }
                     break;
 
-                case "L": // Lewo
+                case 'L': // Lewo
                     if (emptyCol > 0)
                     {
                         Swap(emptyRow, emptyCol, emptyRow, emptyCol - 1);
                     }
                     break;
 
-                case "R": // Prawo
+                case 'R': // Prawo
                     if (emptyCol < gridSize - 1)
                     {
                         Swap(emptyRow, emptyCol, emptyRow, emptyCol + 1);

@@ -25,6 +25,8 @@ internal class Program
         {' ', ' '}
     };
 
+    public static String NazwaPliku = "4x4_07_00201.txt";
+
 
     private static void Main(string[] args)
     {
@@ -60,7 +62,7 @@ internal class Program
                 "c) A* (Hamming)\n" +
                 "d) A* (Manhattan)\n");
 
-        List<string> solution = null;
+        string[] solution = null;
         bool isSelected = false;
         do
         {
@@ -72,21 +74,24 @@ internal class Program
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     string order = Console.ReadLine().ToUpper();
                     solution = SolveBFS(puzzleArray, x, y, order);
+                    SaveToFile(solution, NazwaPliku, "bfs", order.ToLower());
                     isSelected = true;
                     break;
                 case "B":
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     order = Console.ReadLine().ToUpper();
                     solution = SolveDFS(puzzleArray, x, y, order);
-                    Console.WriteLine($"Dlugość rozwiązania: {solution.Count}");
+                    SaveToFile(solution,NazwaPliku,"dfs",order.ToLower());
                     isSelected = true;
                     break;
                 case "C":
                     solution = SolveAStar(puzzleArray, x, y, "H");
+                    SaveToFile(solution, NazwaPliku, "astr", "hamm");
                     isSelected = true;
                     break;
                 case "D":
                     solution = SolveAStar(puzzleArray, x, y, "M");
+                    SaveToFile(solution, NazwaPliku, "astr", "manh");
                     isSelected = true;
                     break;
                 default:
@@ -100,17 +105,18 @@ internal class Program
 
         if (solution != null)
         {
-            Console.WriteLine("Znaleziona najszybsza droga to: " + string.Join(" -> ", solution));
+            Console.WriteLine($"Znaleziona najszybsza droga to: {solution[solution.Length-1]}");
 
             string solutionFilePath = Path.Combine("..", "..",Directory.GetCurrentDirectory(), "solution.txt");
-            File.WriteAllLines(solutionFilePath, solution);
+            File.WriteAllText(solutionFilePath, solution[solution.Length-1]);
 
             Console.Write("Czy chcesz zobaczyć wizualizację? (T/N): ");
             string response = Console.ReadLine();
 
             if (response?.ToUpper() == "T")
             {
-                string relativePath = Path.Combine("..", "..","..",".." ,"FifteenView", "bin", "Debug", "net9.0-windows", "FifteenView.exe");
+                string relativePath = Path.Combine("..","..", "..", "..","FifteenView", "bin", "Debug", "net9.0-windows", "FifteenView.exe");
+                Console.WriteLine(Directory.GetCurrentDirectory());
                 string fullPath = Path.GetFullPath(relativePath);
                 string moves = string.Join(",", solution);
 
@@ -127,6 +133,24 @@ internal class Program
         else
         {
             Console.WriteLine("Brak rozwiązania.");
+        }
+    }
+
+
+    private static bool SaveToFile(string[] Results,
+        string NazwaPliku, string Algorytm, string HeurystykaLubKolejka)
+    {
+        try
+        {
+            String nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_sol.txt");
+
+            File.WriteAllLines(nowaNazwaPliku, Results);
+
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
         }
     }
 
@@ -148,7 +172,7 @@ internal class Program
         return zeroCoordinates;
     }
 
-    private static List<String> SolveDFS(int[,] puzzle, int x, int y,string order)
+    private static string[] SolveDFS(int[,] puzzle, int x, int y,string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         Stack<(int[,], int, int, List<string>, int, char)> stack = new();
@@ -179,12 +203,13 @@ internal class Program
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
-                Console.WriteLine($"DFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
-                Console.WriteLine("Glebokosc: " + Depth);
-                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                Console.WriteLine("Dlugość rozwiązania: " + Depth);
                 Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
                 Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-                return path;
+                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
+                return [Depth.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
             }
 
             if (Depth >= 20) continue;
@@ -218,15 +243,18 @@ internal class Program
             }
         }
         stopwatch.Stop();
-        Console.WriteLine($"DFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
+        Console.WriteLine("Dlugość rozwiązania: -1");
         Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
         Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-        return null;
+        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+        Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
+        return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
 
     }
 
 
-    private static List<string> SolveBFS(int[,] puzzle, int x, int y, string order)
+    private static string[] SolveBFS(int[,] puzzle, int x, int y, string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         Queue<(int[,], int, int, List<string>,char, int)> queue = new();
@@ -262,12 +290,13 @@ internal class Program
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
-                Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
-                Console.WriteLine("Glebokosc: " + Depth);
-                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                Console.WriteLine("Dlugość rozwiązania: " + Depth);
                 Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
                 Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-                return path;
+                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+                double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
+                return [Depth.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
             }
 
             foreach (char next in order)
@@ -300,14 +329,16 @@ internal class Program
             }
         }
             stopwatch.Stop();
-        Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
-        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        Console.WriteLine("Dlugość rozwiązania: -1");
         Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
         Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-        return null;      
+        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+        Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
+        return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
     }
 
-    private static List<string> SolveAStar(int[,] puzzle, int x, int y, string heuristicType)
+    private static string[] SolveAStar(int[,] puzzle, int x, int y, string heuristicType)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         PriorityQueue<(int[,], int, int, List<string>, int), int> priorityQueue = new();
@@ -342,8 +373,9 @@ internal class Program
                 Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
                 Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
                 Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
-                Console.WriteLine($"SolveAStar ({heuristicType}) czas wykonania: {Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3)} (ms)");
-                return path;
+                double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
+                return [gCost.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
             }
             
 
@@ -379,11 +411,13 @@ internal class Program
             }
         }
         stopwatch.Stop();
-        Console.WriteLine($"BFS czas wykonania: {stopwatch.ElapsedMilliseconds} (ms)");
-        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        Console.WriteLine("Dlugość rozwiązania: -1");
         Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
         Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-        return null;
+        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
+        double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+        Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
+        return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
     }
 
 
