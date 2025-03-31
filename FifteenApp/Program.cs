@@ -74,24 +74,24 @@ internal class Program
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     string order = Console.ReadLine().ToUpper();
                     solution = SolveBFS(puzzleArray, x, y, order);
-                    SaveToFile(solution, NazwaPliku, "bfs", order.ToLower());
+                    SaveToFiles(solution, NazwaPliku, "bfs", order.ToLower());
                     isSelected = true;
                     break;
                 case "B":
                     Console.Write("Podaj kolejność przeszukiwania dla DFS (np. UDLR, ULDR, LDUR): ");
                     order = Console.ReadLine().ToUpper();
                     solution = SolveDFS(puzzleArray, x, y, order);
-                    SaveToFile(solution,NazwaPliku,"dfs",order.ToLower());
+                    SaveToFiles(solution,NazwaPliku,"dfs",order.ToLower());
                     isSelected = true;
                     break;
                 case "C":
                     solution = SolveAStar(puzzleArray, x, y, "H");
-                    SaveToFile(solution, NazwaPliku, "astr", "hamm");
+                    SaveToFiles(solution, NazwaPliku, "astr", "hamm");
                     isSelected = true;
                     break;
                 case "D":
                     solution = SolveAStar(puzzleArray, x, y, "M");
-                    SaveToFile(solution, NazwaPliku, "astr", "manh");
+                    SaveToFiles(solution, NazwaPliku, "astr", "manh");
                     isSelected = true;
                     break;
                 default:
@@ -137,14 +137,21 @@ internal class Program
     }
 
 
-    private static bool SaveToFile(string[] Results,
+    private static bool SaveToFiles(string[] Results,
         string NazwaPliku, string Algorytm, string HeurystykaLubKolejka)
     {
+        string[] newResults = new string[2];
+        newResults[0] = Results[0];
+        newResults[1] = Results[Results.Length - 1];
         try
         {
-            String nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_sol.txt");
+            String nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_stats.txt");
 
-            File.WriteAllLines(nowaNazwaPliku, Results);
+            File.WriteAllLines(nowaNazwaPliku, Results.Take(Results.Length - 1));
+
+            nowaNazwaPliku = NazwaPliku.Replace(".txt", $"_{Algorytm}_{HeurystykaLubKolejka}_sol.txt");
+
+            File.WriteAllLines(nowaNazwaPliku, newResults);
 
             return true;
         }
