@@ -189,21 +189,21 @@ internal class Program
         return zeroCoordinates;
     }
 
-    private static string[] SolveDFS(int[,] puzzle, int x, int y,string order)
+    private static string[] SolveDFS(int[,] puzzle, int x, int y, string order)
     {
         Stopwatch stopwatch = Stopwatch.StartNew();
         Stack<(int[,], int, int, List<string>, int, char)> stack = new();
-        HashSet<string> visited = new();
+        Dictionary<string, int> visited = new Dictionary<string, int>();
 
         int visitedCount = 0;
         int processedCount = 0;
         int maxDepthReached = 0;
 
-        int emptyX = SearchForZero(puzzle, x, y)[0];
-        int emptyY = SearchForZero(puzzle, x, y)[1];
+        (int emptyX, int emptyY) = (SearchForZero(puzzle, x, y)[0], SearchForZero(puzzle, x, y)[1]);
 
+        string initialState = GetState(puzzle);
         stack.Push((puzzle, emptyX, emptyY, new List<string>(), 0, ' '));
-        visited.Add(GetState(puzzle));
+        visited[initialState] = 0;
 
         while (stack.Count > 0)
         {
@@ -212,63 +212,56 @@ internal class Program
             int curX = takenElement.Item2;
             int curY = takenElement.Item3;
             List<string> path = takenElement.Item4;
-            int Depth = takenElement.Item5;
+            int depth = takenElement.Item5;
             char lastMove = takenElement.Item6;
-            processedCount++;
 
-            maxDepthReached = Math.Max(maxDepthReached, Depth);
+            processedCount++;
+            maxDepthReached = Math.Max(maxDepthReached, depth);
 
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
-                Console.WriteLine("Dlugość rozwiązania: " + Depth);
-                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
                 double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
-                return [Depth.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
+                return [depth.ToString(),visitedCount.ToString(),processedCount.ToString(),maxDepthReached.ToString(),czasWin.ToString(),string.Join("", path)];
             }
 
-            if (Depth >= 20) continue;
+            if (depth >= 20) continue;
 
             foreach (char next in order)
             {
                 if (moveDictionary.ContainsKey(next) && next != swingMoves[lastMove])
                 {
-                    (int row, int col, string move) moveInfo = moveDictionary[next];
-                    int newX = curX + moveInfo.row;
-                    int newY = curY + moveInfo.col;
-                    string move = moveInfo.move;
+                    var (dx, dy, moveStr) = moveDictionary[next];
+                    int newX = curX + dx;
+                    int newY = curY + dy;
 
                     if (newX >= 0 && newX < x && newY >= 0 && newY < y)
                     {
                         int[,] newPuzzle = (int[,])currentPuzzle.Clone();
                         (newPuzzle[curX, curY], newPuzzle[newX, newY]) = (newPuzzle[newX, newY], newPuzzle[curX, curY]);
 
-                        string stateStr = GetState(newPuzzle);
-                        if (!visited.Contains(stateStr))
+                        string newState = GetState(newPuzzle);
+                        int newDepth = depth + 1;
+
+                        if (!visited.ContainsKey(newState) || visited[newState] > newDepth)
                         {
-                            visited.Add(stateStr);
+                            visited[newState] = newDepth;
                             visitedCount++;
+
                             List<string> newPath = new List<string>(path);
-                            newPath.Add(move);
-                            stack.Push((newPuzzle, newX, newY, newPath, Depth + 1, next));
+                            newPath.Add(moveStr);
+                            stack.Push((newPuzzle, newX, newY, newPath, newDepth, next));
                         }
                     }
                 }
             }
         }
-        stopwatch.Stop();
-        Console.WriteLine("Dlugość rozwiązania: -1");
-        Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-        Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
-        double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-        Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
-        return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
 
+        stopwatch.Stop();
+        double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
+        return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
     }
+
 
 
     private static string[] SolveBFS(int[,] puzzle, int x, int y, string order)
@@ -308,12 +301,7 @@ internal class Program
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
-                Console.WriteLine("Dlugość rozwiązania: " + Depth);
-                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
                 double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
                 return [Depth.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
             }
 
@@ -346,12 +334,7 @@ internal class Program
             }
         }
             stopwatch.Stop();
-        Console.WriteLine("Dlugość rozwiązania: -1");
-        Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-        Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-        Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
         double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-        Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
         return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
     }
 
@@ -389,12 +372,7 @@ internal class Program
             if (IsSolved(currentPuzzle, x, y))
             {
                 stopwatch.Stop();
-                Console.WriteLine("Dlugość rozwiązania: " + gCost);
-                Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-                Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-                Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
                 double czasWin = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-                Console.WriteLine($"DFS czas wykonania: {czasWin} (ms)");
                 return [gCost.ToString(), visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czasWin.ToString(), String.Join("", path)];
             }
 
@@ -434,12 +412,7 @@ internal class Program
             }
         }
             stopwatch.Stop();
-            Console.WriteLine("Dlugość rozwiązania: -1");
-            Console.WriteLine("Liczba odwiedzonych stanów: " + visitedCount);
-            Console.WriteLine("Liczba przetworzonych stanów: " + processedCount);
-            Console.WriteLine("Maksymalna glebokosc rekursji: " + maxDepthReached);
             double czas = Math.Round(stopwatch.Elapsed.TotalMilliseconds, 3);
-            Console.WriteLine($"DFS czas wykonania: {czas} (ms)");
             return ["-1", visitedCount.ToString(), processedCount.ToString(), maxDepthReached.ToString(), czas.ToString()];
         
     }
